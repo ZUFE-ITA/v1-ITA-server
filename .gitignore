@@ -1,0 +1,28 @@
+.vscode/**
+**/__pycache__/**
+
+test.py
+run.cmd
+
+# Logs
+logs
+*.log
+
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+
+run-in-server.sh

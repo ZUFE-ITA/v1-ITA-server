@@ -1,0 +1,6 @@
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+pymongo
+fastapi-mail
+redis
