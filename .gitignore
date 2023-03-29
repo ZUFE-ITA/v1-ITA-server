@@ -25,4 +25,4 @@ dist-ssr
 coverage
 *.local
 
-run-in-server.sh
+run-in-server.*
