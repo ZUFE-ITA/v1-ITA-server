@@ -24,8 +24,8 @@ async def event_create(*, user:UserPermissionModel = Depends(get_user_permission
 async def event_list(token: str | None = Cookie(default=None)):
     if token:
         uid = get_id_from_token(token)
-        return [EventInfo(**cell, id=str(cell['_id'])) for cell in await evt.list(uid)]
-    return [EventInfo(**cell, id=str(cell['_id'])) for cell in await evt.list()]
+        return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) for cell in await evt.list(uid)]
+    return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) for cell in await evt.list()]
 
 @router.post("/join")
 async def join_event(*, jin: JoinInModel, user: UserPermissionModel = Depends(get_user_permission_model)):
@@ -44,6 +44,12 @@ async def get_joined_events(user: UserInfo = Depends(get_user_info_by_token)):
     li = await evt.get_joined_list(user.id, str)
     return li
 
+@router.post("/update/{id}")
+async def update_event(*, id: str, user: UserPermissionModel=Depends(get_user_permission_model), form: EventCreateForm):
+    if user.permission.cannot(Event.Append):
+        raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
+    await evt.update(id, form)
+
 @router.post("/{id}")
 async def get_event_info(*, id: str, token: str | None = Cookie(default=None)):
     if token:
@@ -51,4 +57,4 @@ async def get_event_info(*, id: str, token: str | None = Cookie(default=None)):
     else:
         uid = None
     e = await evt.get(id, uid)
-    return EventInfo(**e, id=str(e['_id']))
+    return EventInfo(**e, id=str(e['_id']), creator=str(e['uid']))

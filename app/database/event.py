@@ -24,7 +24,7 @@ class Event:
         _eid = ObjectId(eid)
         if uid is not None:
             _uid = ObjectId(uid)
-            rec = cls.event.find_one({"_id": _eid}, {"uid": 0})
+            rec = cls.event.find_one({"_id": _eid})
             if not rec:
                 raise ServiceException(status.HTTP_404_NOT_FOUND, detail='not found', code=ErrorCode.EVENT.NOT_FOUND)
             rec['joined'] = True if _uid in rec.get("roll", []) else False
@@ -42,6 +42,7 @@ class Event:
             "$project": {
                 "title" : 1,
                 "desc" : 1,
+                'uid': 1,
                 "organizer" : 1,
                 "addr" : 1,
                 "longtime" : 1,
@@ -72,6 +73,10 @@ class Event:
     async def create(cls, uid: str, event_form: EventCreateForm):
         _uid = ObjectId(uid)
         return cls.event.insert_one({"uid": _uid, **event_form.dict(exclude_none=True)})
+
+    @classmethod
+    async def update(cls, id: str, form: EventCreateForm):
+        cls.event.update_one({"_id": ObjectId(id)}, {"$set": form.dict(exclude_none=True)})
 
     @classmethod
     async def get_joined_list(cls, uid: str, dtype=str):

@@ -161,6 +161,7 @@ class EventCreateResult(BaseModel):
 
 class EventInfo(EventCreateForm):
     id:     str
+    creator:str 
     joined: bool = False
 
 class JoinInModel(BaseModel):
