@@ -13,7 +13,7 @@ router = APIRouter(
 
 @router.post("/create")
 async def event_create(*, user:UserPermissionModel = Depends(get_user_permission_model), form: EventCreateForm):
-    if user.permission.Event.Append:
+    if user.permission.Event.Write:
         create_res = await evt.create(user.id, form)
         return EventCreateResult(id=str(create_res.inserted_id))
     raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
@@ -44,7 +44,7 @@ async def get_joined_events(user: UserInfo = Depends(get_user_info_by_token)):
 
 @router.post("/update/{id}")
 async def update_event(*, id: str, user: UserPermissionModel=Depends(get_user_permission_model), form: EventCreateForm):
-    if not user.permission.Event.Append:
+    if not user.permission.Event.Write:
         raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
     await evt.update(id, form)
 

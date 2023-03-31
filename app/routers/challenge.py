@@ -17,7 +17,7 @@ class ChallengeCreateResult(BaseModel):
 
 @router.post("/create")
 async def challenge_create(*, user:UserPermissionModel = Depends(get_user_permission_model), form: ChallengeCreateForm):
-    if user.permission.Challenge.Append:
+    if user.permission.Challenge.Write:
         res = await Challenge.create(user.id, form)
         return ChallengeCreateResult(id=str(res.inserted_id))
     raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
@@ -33,7 +33,7 @@ async def challenge_list(*, user: UserPermissionModel = Depends(get_user_permiss
 
 @router.post("/update/{id}")
 async def update_challenge(*, id: str, user: UserPermissionModel=Depends(get_user_permission_model), form: ChallengeCreateForm):
-    if not user.permission.Challenge.Append:
+    if not user.permission.Challenge.Write:
         raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
     await Challenge.update(id, form)
 
