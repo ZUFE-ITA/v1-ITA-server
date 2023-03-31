@@ -3,7 +3,7 @@ import random
 
 from .includes import *
 from .user import User
-from ..utils.helper import hash_psw
+from ..utils.token_utils import hash_psw
 
 class TeamMail:
     

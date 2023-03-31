@@ -1,12 +1,10 @@
-from fastapi import APIRouter, Depends, Response, status, Cookie
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, status, Cookie
 
 from ..dependencies import get_user_permission_model, get_user_info_by_token
 from ..exceptions import ServiceException, ErrorCode
 from ..database.event import Event as evt
 from ..DataModel import UserPermissionModel, EventCreateForm, EventCreateResult, EventInfo, JoinInModel, UserInfo
-from ..utils.permission import Event
-from ..utils.token import get_id_from_token
+from ..utils.token_utils import get_id_from_token
 
 router = APIRouter(
     prefix="/event",
@@ -15,7 +13,7 @@ router = APIRouter(
 
 @router.post("/create")
 async def event_create(*, user:UserPermissionModel = Depends(get_user_permission_model), form: EventCreateForm):
-    if user.permission.can(Event.Append):
+    if user.permission.Event.Append:
         create_res = await evt.create(user.id, form)
         return EventCreateResult(id=str(create_res.inserted_id))
     raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
@@ -29,13 +27,13 @@ async def event_list(token: str | None = Cookie(default=None)):
 
 @router.post("/join")
 async def join_event(*, jin: JoinInModel, user: UserPermissionModel = Depends(get_user_permission_model)):
-    if user.permission.cannot(Event.Join):
+    if not user.permission.Event.Join:
         raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
     await evt.join(user.id, jin.id)
 
 @router.post("/exit")
 async def join_event(*, jin: JoinInModel, user: UserPermissionModel = Depends(get_user_permission_model)):
-    if user.permission.cannot(Event.Join):
+    if not user.permission.Event.Join:
         raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
     await evt.exit(user.id, jin.id)
 
@@ -46,7 +44,7 @@ async def get_joined_events(user: UserInfo = Depends(get_user_info_by_token)):
 
 @router.post("/update/{id}")
 async def update_event(*, id: str, user: UserPermissionModel=Depends(get_user_permission_model), form: EventCreateForm):
-    if user.permission.cannot(Event.Append):
+    if not user.permission.Event.Append:
         raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
     await evt.update(id, form)
 

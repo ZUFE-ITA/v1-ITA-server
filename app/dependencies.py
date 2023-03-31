@@ -6,9 +6,8 @@ from jose import JWTError
 from . import database as db
 from .exceptions import ServiceException, ErrorCode
 from .DataModel import *
-from .utils.token import get_id_from_token
-from .utils.permission import DEFAULT_PERMISSION
-from .utils.helper import hash_psw
+from .utils.token_utils import get_id_from_token, hash_psw
+from .utils.permission import DEFAULT_PERMISSION, parse_permission
 
 def isEmail(email: str):
     return email and re.match("^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$", email)
@@ -42,17 +41,23 @@ async def register(form: RegisterForm):
     if await db.User.find_one({"username": form.username}):
         raise ServiceException(
             status_code=400,
-            detail="用户名被注册过啦~",
+            detail="用户名被注册过",
             code = ErrorCode.FORM.USERNAME_CONFLICT
         )
     if await db.User.find_one({"mail": form.mail}):
         raise ServiceException(
             status_code=400,
-            detail="邮箱被注册过啦~",
+            detail="邮箱被注册过",
             code = ErrorCode.FORM.EMAIL_CONFLICT
         )
+    if await db.User.find_one({"no": form.no}):
+        raise ServiceException(
+            status_code=400,
+            detail="学号被注册过",
+            code = ErrorCode.FORM.NO_CONFLICT
+        )
     user_info = generateUser(form)
-    insert_res = await db.User.insert_one(user_info.dict())
+    insert_res = await db.User.insert_one(user_info.dict(exclude_none=True))
     return UserInfoWithPermission(**user_info.dict(), id=str(insert_res.inserted_id))
 
 
@@ -118,7 +123,7 @@ async def get_user_info_by_id(id: str):
     return None
 
 async def get_user_permission_model(user: UserInfoWithPermission = Depends(get_user_info_by_token)):
-    pm = PermissionModel(user.permission)
+    pm = parse_permission(user.permission)
     return UserPermissionModel(id=user.id, permission=pm)
 
 """ ==== File ==== """

@@ -3,11 +3,9 @@ from pydantic import BaseModel
 
 from ..dependencies import UserInfo, UserInfoWithPermission
 from .. import dependencies
-from ..database import  User, Article, gen_activate_code, gen_reset_psw_code, verify_activate_code, verify_reset_psw_code
-from ..utils.mail import send_verify_code_mail
-from ..utils.token import generate_user_token
-from ..utils.helper import set_cookie
-from ..utils.checker import check_psw
+from ..database import  User, Article, verify_reset_psw_code
+from ..utils.token_utils import generate_user_token, set_cookie
+from ..utils import check_psw
 from ..exceptions import ServiceException, ErrorCode
 
 router = APIRouter(
@@ -16,7 +14,6 @@ router = APIRouter(
 )
 
 class InfoIn(BaseModel):
-    # ↓ uid 
     id: str
 
 class InfoOut(BaseModel):

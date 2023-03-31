@@ -48,6 +48,7 @@ class Event:
                 "longtime" : 1,
                 "range" : 1,
                 "start": 1,
+                "end": 1,
                 "with_point" : 1,
                 "point_detail" : 1,
                 "with_reward" : 1,
@@ -56,6 +57,8 @@ class Event:
                 "max_count" : 1,
                 "need_check": 1,
                 "deadline": 1,
+                "manual_stop": 1,
+                'is_competition': 1,
                 "joined": {
                     '$cond': [{
                         "$and": [
