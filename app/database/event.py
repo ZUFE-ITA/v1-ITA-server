@@ -24,18 +24,18 @@ class Event:
         _eid = ObjectId(eid)
         if uid is not None:
             _uid = ObjectId(uid)
-            rec = cls.event.find_one({"_id": _eid})
+            rec = await cls.event.find_one({"_id": _eid})
             if not rec:
                 raise ServiceException(status.HTTP_404_NOT_FOUND, detail='not found', code=ErrorCode.EVENT.NOT_FOUND)
             rec['joined'] = True if _uid in rec.get("roll", []) else False
             return rec
-        rec = cls.event.find_one({"_id": _eid}, {'roll': 0})
+        rec = await cls.event.find_one({"_id": _eid}, {'roll': 0})
         return rec
 
     @classmethod
     async def list(cls, uid: str = None):
         if uid is None:
-            return cls.event.find({})
+            return await cls.event.find({})
         _uid = ObjectId(uid)
         return cls.event.aggregate([
             {
@@ -75,16 +75,16 @@ class Event:
     @classmethod
     async def create(cls, uid: str, event_form: EventCreateForm):
         _uid = ObjectId(uid)
-        return cls.event.insert_one({"uid": _uid, **event_form.dict(exclude_none=True)})
+        return await cls.event.insert_one({"uid": _uid, **event_form.dict(exclude_none=True)})
 
     @classmethod
     async def update(cls, id: str, form: EventCreateForm):
-        cls.event.update_one({"_id": ObjectId(id)}, {"$set": form.dict(exclude_none=True)})
+        await cls.event.update_one({"_id": ObjectId(id)}, {"$set": form.dict(exclude_none=True)})
 
     @classmethod
     async def get_joined_list(cls, uid: str, dtype=str):
         _uid = ObjectId(uid)
-        user_hist = cls.history.find({"uid": _uid}, {"eid": 1})
+        user_hist = await cls.history.find({"uid": _uid}, {"eid": 1})
         hist = [i.get('eid') for i in user_hist]
         if dtype == str:
             return [str(h) for h in hist]
@@ -95,7 +95,7 @@ class Event:
     async def join(cls, uid: str, eid: str):
         _uid = ObjectId(uid)
         _eid = ObjectId(eid)
-        rec = cls.event.find_one({"_id": _eid}, {
+        rec = await cls.event.find_one({"_id": _eid}, {
             "roll": 1,
             "limit_count": 1,
             "max_count": 1,
@@ -118,7 +118,7 @@ class Event:
 
         if _uid not in roll:
             # update event
-            cls.event.update_one({"_id": _eid}, {
+            await cls.event.update_one({"_id": _eid}, {
                 "$push": {
                     "roll": _uid
                 },
@@ -131,7 +131,7 @@ class Event:
             })
             # update history
             # *假设用户不在roll中就一定没有保存在history中
-            cls.history.insert_one({
+            await cls.history.insert_one({
                 "uid": _uid,
                 "eid": _eid,
                 "status": {
@@ -147,7 +147,7 @@ class Event:
         _uid = ObjectId(uid)
         _eid = ObjectId(eid)
         
-        rec = cls.event.find_one({"_id": _eid}, {'roll': 1})
+        rec = await cls.event.find_one({"_id": _eid}, {'roll': 1})
         if rec is None:
             raise ServiceException(status.HTTP_404_NOT_FOUND, detail='event not found', code=ErrorCode.EVENT.NOT_FOUND)
         roll = rec.get("roll", [])
@@ -158,7 +158,7 @@ class Event:
                 code=ErrorCode.EVENT.NOT_JOINED
             )
         
-        cls.event.update_one({"_id": _eid}, {
+        await cls.event.update_one({"_id": _eid}, {
             "$pull": {
                 "roll": _uid
             },
@@ -166,4 +166,4 @@ class Event:
                 f"status.{uid}": ''
             }
         })
-        cls.history.delete_one({'uid': _uid, "eid": _eid})
+        await cls.history.delete_one({'uid': _uid, "eid": _eid})

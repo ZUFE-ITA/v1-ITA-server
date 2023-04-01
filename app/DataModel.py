@@ -65,9 +65,6 @@ class LoginForm(BaseModel):
     mail:    str
     psw:      str
 
-class Currency(BaseModel):
-    soap: int|None  = None
-    pants: int|None = None
 
 class UserInfo(BaseModel):
     id:             str
@@ -75,7 +72,6 @@ class UserInfo(BaseModel):
     username:       str
     activated:      bool          = False
     signature:      str|None      = None
-    currency:       Currency|None = None
 
 class Token(BaseModel):
     access_token:  str
@@ -185,5 +181,4 @@ class ChallengeInfoOmitFlag(BaseModel):
     id:      str
     title:   str
     creator: str
-    label:   str
     desc:    str

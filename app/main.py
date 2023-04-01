@@ -2,13 +2,14 @@ from fastapi import Cookie, FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .routers import user, event, challenge
+from .routers import user, event, challenge, competition
 from .exceptions import ServiceException
 
 app = FastAPI()
 app.include_router(user.router)
 app.include_router(event.router)
 app.include_router(challenge.router)
+app.include_router(competition.router)
 
 origins = [
     'http://127.0.0.1:5173', "http://localhost:5173",

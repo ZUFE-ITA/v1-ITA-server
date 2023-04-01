@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from ..dependencies import UserInfo, UserInfoWithPermission
 from .. import dependencies
-from ..database import  User, Article, verify_reset_psw_code
+from ..database import  User, verify_reset_psw_code
 from ..utils.token_utils import generate_user_token, set_cookie
 from ..utils import check_psw
 from ..exceptions import ServiceException, ErrorCode
@@ -40,7 +40,7 @@ async def login(
 ):
     id = user.id
     age = 31536000 if form.remember else None
-    access_token = generate_user_token(id, age)
+    access_token = await generate_user_token(id, age)
     set_cookie(response, "token", access_token, max_age=age)
     return user
 
@@ -50,7 +50,7 @@ async def auth(user: UserInfoWithPermission = Depends(dependencies.get_user_info
 
 @router.post("/register")
 async def register(resp: Response, register_result: UserInfoWithPermission = Depends(dependencies.register)):
-    access_token = generate_user_token(register_result.id, 1800)
+    access_token = await generate_user_token(register_result.id, 1800)
     set_cookie(resp, "token", access_token, max_age=1800)
     return register_result
 
@@ -80,9 +80,6 @@ async def reset_psw(*, rin: ResetPswIn):
         code = ErrorCode.FORM.UNKNOWN_EMAIL
     )
 
-class UserEventIn(BaseModel):
-    uid: str
-
 class UserEvent(BaseModel):
     id:      str
     type:    str
@@ -93,21 +90,6 @@ class UserEventOut(BaseModel):
     username: str
     uid:      str
     events:   list[UserEvent]
-
-@router.post("/events")
-async def post_articles(*, uai: UserEventIn):
-    if user := await User.find_by_id(uai.uid, {"_id": 1, "username": 1}):
-        posted = await Article.get_summary_by_uid(uai.uid)
-        return UserEventOut(username=user['username'], uid=uai.uid, events=[
-            UserEvent(id=str(p['_id']), type="article", title=p['sub'], caption=p['summary'])
-            for p in posted
-        ])
-    raise ServiceException(
-        status.HTTP_404_NOT_FOUND,
-        detail="user not found",
-        code = ErrorCode.USER.NOT_FOUND
-    )
-
 
 class UpdateSignIn(BaseModel):
     sign: str
@@ -135,7 +117,12 @@ async def updateSign(*, user: UserInfo = Depends(dependencies.get_user_info_by_t
         )
     await User.update_username(user.id, uui.username)
 
+class CommonUserInfo(BaseModel):
+    id:         str
+    username:   str
+    signature:  str|None = None
+
 @router.get("/{uid}")
 async def get_iser_info(uid: str):
     info = await User.find_by_id(uid)
-    return UserInfo(**info, id=str(info['_id']))
+    return CommonUserInfo(**info, id=str(info['_id']))

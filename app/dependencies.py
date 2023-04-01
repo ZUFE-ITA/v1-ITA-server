@@ -94,17 +94,21 @@ async def login(form: LoginForm):
 
 
 """ ==== Token Dependencies ==== """
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+async def get_uid_from_token(token: str | None = Cookie(default=None)) -> str:
+    if not token:
+        raise credentials_exception
+    return await get_id_from_token(token)
 
 async def get_user_info_by_token(token: str | None = Cookie(default=None)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     if not token:
         raise credentials_exception
     try:
-        id = get_id_from_token(token)
+        id = await get_id_from_token(token)
         if id is None:
             raise credentials_exception
     except JWTError:

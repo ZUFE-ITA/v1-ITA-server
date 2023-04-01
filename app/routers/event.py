@@ -21,9 +21,9 @@ async def event_create(*, user:UserPermissionModel = Depends(get_user_permission
 @router.post("/list")
 async def event_list(token: str | None = Cookie(default=None)):
     if token:
-        uid = get_id_from_token(token)
-        return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) for cell in await evt.list(uid)]
-    return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) for cell in await evt.list()]
+        uid = await get_id_from_token(token)
+        return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) async for cell in await evt.list(uid)]
+    return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) async for cell in await evt.list()]
 
 @router.post("/join")
 async def join_event(*, jin: JoinInModel, user: UserPermissionModel = Depends(get_user_permission_model)):
@@ -51,7 +51,7 @@ async def update_event(*, id: str, user: UserPermissionModel=Depends(get_user_pe
 @router.post("/{id}")
 async def get_event_info(*, id: str, token: str | None = Cookie(default=None)):
     if token:
-        uid = get_id_from_token(token)
+        uid = await get_id_from_token(token)
     else:
         uid = None
     e = await evt.get(id, uid)

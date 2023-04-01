@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, status, Cookie
 from pydantic import BaseModel
 
-from ..dependencies import get_user_permission_model, get_user_info_by_token
+from ..dependencies import get_user_permission_model, get_user_info_by_token, get_uid_from_token
 from ..exceptions import ServiceException, ErrorCode
 from ..database.challenge import Challenge
 from ..DataModel import UserPermissionModel, UserInfo, ChallengeInfo, ChallengeCreateForm
-from ..utils.token_utils import get_id_from_token
 
 router = APIRouter(
     prefix="/challenge",
@@ -22,14 +21,24 @@ async def challenge_create(*, user:UserPermissionModel = Depends(get_user_permis
         return ChallengeCreateResult(id=str(res.inserted_id))
     raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
 
+@router.post("/list")
+async def challenge_list(*, user: UserPermissionModel = Depends(get_user_permission_model)):
+    if user.permission.Challenge.Read:
+        return [
+            ChallengeInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) 
+            async for cell in await Challenge.list()
+        ]
+    raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
+
 @router.post("/list/{label}")
 async def challenge_list(*, user: UserPermissionModel = Depends(get_user_permission_model), label: str):
     if user.permission.Challenge.Read:
         return [
             ChallengeInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) 
-            for cell in await Challenge.list(label)
+            async for cell in await Challenge.list(label)
         ]
     raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
+
 
 @router.post("/update/{id}")
 async def update_challenge(*, id: str, user: UserPermissionModel=Depends(get_user_permission_model), form: ChallengeCreateForm):
@@ -37,8 +46,8 @@ async def update_challenge(*, id: str, user: UserPermissionModel=Depends(get_use
         raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
     await Challenge.update(id, form)
 
-@router.post("/{id}")
-async def get_challenge_info(*, id: str, user: UserPermissionModel = Depends(get_user_permission_model)):
+@router.post("/{comp_id}")
+async def get_challenge_info(*, comp_id: str, user: UserPermissionModel = Depends(get_user_permission_model)):
     if user.permission.Challenge.Read:
-        rec = await Challenge.get(id)
+        rec = await Challenge.get(comp_id)
         return ChallengeInfo(**rec, id=str(rec['_id']), creator=str(rec['uid']))

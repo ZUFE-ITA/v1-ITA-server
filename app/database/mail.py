@@ -8,19 +8,7 @@ from ..utils.token_utils import hash_psw
 class TeamMail:
     
     collection = db.team_mail
-    default_record = collection.find_one({"default": True})
 
-    default_config = ConnectionConfig(
-        MAIL_USERNAME = default_record['from'],
-        MAIL_PASSWORD = default_record['password'],
-        MAIL_FROM = default_record['from'],
-        MAIL_PORT = default_record['port'],
-        MAIL_SERVER = default_record['host'],
-        MAIL_STARTTLS = False,
-        MAIL_SSL_TLS = True,
-        USE_CREDENTIALS = True,
-        VALIDATE_CERTS = True
-    )
     
     @classmethod
     async def get_config(cls, team=None):
@@ -38,7 +26,19 @@ class TeamMail:
                     USE_CREDENTIALS = True,
                     VALIDATE_CERTS  = True
                 )
-        return cls.default_config
+        default_record = await cls.collection.find_one({"default": True})
+        default_config = ConnectionConfig(
+            MAIL_USERNAME = default_record['from'],
+            MAIL_PASSWORD = default_record['password'],
+            MAIL_FROM = default_record['from'],
+            MAIL_PORT = default_record['port'],
+            MAIL_SERVER = default_record['host'],
+            MAIL_STARTTLS = False,
+            MAIL_SSL_TLS = True,
+            USE_CREDENTIALS = True,
+            VALIDATE_CERTS = True
+        )
+        return default_config
 
 class VerifyMail:
     """ redis db """
