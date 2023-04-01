@@ -182,3 +182,13 @@ class ChallengeInfoOmitFlag(BaseModel):
     title:   str
     creator: str
     desc:    str
+    score:   float
+
+
+class Score(BaseModel):
+    id:    str
+    score: float
+
+class ChangeChallengeForm(BaseModel):
+    comp_id: str
+    scores:  list[Score]

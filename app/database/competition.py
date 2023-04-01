@@ -5,26 +5,46 @@ from .event import Event
 """db.competition
 {
     _id: ObjectId
-    challenges: [
-        {
-            id: ObjectId,
-            passed: list[ObjectId] # *通过的用户ID
-        }
-    ]
+    challenges: {
+        id: ObjectId
+        passed: {
+            id: ObjectId,  # *通过的用户ID
+            time: datetime
+        }[]
+    }[]
 }
 """
 """db.competition_passed_challenge
 {
     _id: ObjectId,
     uid: ObjectId,
-    comp_id: ObjectId,
-    passed: list[ObjectId] # *通过的题目ID
+    comp_id: ObjectId
+    cha_id: ObjectId
+    time: Datetime
 }
 """
 class Competition:
     comp = db.competition
-    passed = db.competition_passed_challenge
+    passed = db.competition_passed_challenge # 用户通过的challenge!
 
+    @classmethod
+    async def get_personal_score(cls, comp_id: str, uid: str):
+        _uid = ObjectId(uid)
+        _coid = ObjectId(comp_id)
+        res = cls.comp.aggregate([
+            # {"$limit": 1},
+            {"$match": {"_id": _coid}},
+            {"$match": {'challenges.passed': _uid} },
+            {"$unwind": "$challenges"},
+            {
+                '$group':{
+                    '_id': None,
+                    "score": {"$sum": "$challenges.score"}
+                }
+            },
+        ])
+        async for i in res:
+            return i['score']
     @classmethod
     async def get_challenge(cls, comp_id: str, cha_id: str):
         _chid = ObjectId(cha_id)
@@ -97,6 +117,7 @@ class Competition:
             raise ServiceException(status.HTTP_418_IM_A_TEAPOT, detail='提交过了', code=ErrorCode.COMPETITION.ALREADY_PASSED)
         # 检查flag
         await Challenge.check_flag(_chid, flag)
+        now = datetime.now()
         update = await cls.comp.update_one({
             "_id": _coid,
             "challenges": { '$elemMatch': { "id": _chid } }
@@ -105,6 +126,14 @@ class Competition:
                 'challenges.$.passed': _uid
             }
         })
+        # 更新cls.passed
+        await cls.passed.insert_one({
+            "uid": _uid,
+            "comp_id": _coid,
+            "cha_id": _chid,
+            "time": now,
+        })
+
         if update.matched_count:
             return True
         raise ServiceException(status.HTTP_404_NOT_FOUND, detail='题目不存在', code=ErrorCode.CHALLENGE.NOT_FOUND)
@@ -116,14 +145,15 @@ class Competition:
         return rec is not None
 
     @classmethod
-    async def append_challenge(cls, comp_id: str, *cha_id: str):
-        if len(cha_id) == 0:
+    async def append_challenge(cls, comp_id: str, *scores: Score):
+        if len(scores) == 0:
             return 0
         _cid = ObjectId(comp_id)
         push = [{
-            'id': ObjectId(i),
+            'id': ObjectId(i.id),
+            "score": i.score,
             "passed": []
-        } for i in set(cha_id)]
+        } for i in scores]
         if await cls.exists(_cid):
             res = await cls.comp.update_one({"_id": _cid}, {
                 "$push": {
@@ -159,3 +189,25 @@ class Competition:
             return resp.get("challenges", [])
         else:
             return []
+
+    @classmethod
+    async def get_rank(cls, comp_id: str):
+        _coid = ObjectId(comp_id)
+        # 查询所有用户的提交记录(该场比赛)
+        return cls.passed.aggregate([
+            {'$match': {"comp_id": _coid}},
+            {
+                '$group': {
+                    '_id': "$uid",
+                    'avg_time': { '$avg': {'$toLong': "$time" } },
+                    'count': {'$sum': 1}
+                }
+            },
+            {
+                '$project': {
+                    'uid': {"$toString": "$_id"},
+                    "avg_time": 1,
+                    'count': 1
+                }
+            }
+        ])
