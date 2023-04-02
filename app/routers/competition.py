@@ -65,6 +65,9 @@ class CheckFlagIn(BaseModel):
 
 @router.post("/check")
 async def check_flag(*, cfi: CheckFlagIn, uid: str = Depends(get_uid_from_token)):
+    # 判断比赛是否停止
+    if await Competition.if_stop(cfi.comp_id):
+        raise ServiceException(status.HTTP_400_BAD_REQUEST, detail='已停止', code=ErrorCode.COMPETITION.SUBMISSION_CLOSED)
     await Competition.check_flag(uid, cfi.comp_id, cfi.cha_id, cfi.flag)
 
 class RankData(BaseModel):

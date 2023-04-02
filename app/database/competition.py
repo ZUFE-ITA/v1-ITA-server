@@ -105,6 +105,9 @@ class Competition:
         else:
             raise ServiceException(status.HTTP_404_NOT_FOUND, detail='比赛不存在', code=ErrorCode.COMPETITION.NOT_FOUND)
     
+    @classmethod
+    async def if_stop(cls, comp_id: str):
+        return await Event.if_stop(comp_id)
 
     @classmethod
     async def check_flag(cls, uid: str, comp_id: str, cha_id: str, flag: str):

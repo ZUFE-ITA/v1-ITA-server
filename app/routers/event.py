@@ -48,6 +48,18 @@ async def update_event(*, id: str, user: UserPermissionModel=Depends(get_user_pe
         raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
     await evt.update(id, form)
 
+@router.post("/stop/{id}")
+async def stop_event(*, id: str, user: UserPermissionModel=Depends(get_user_permission_model)):
+    if not user.permission.Event.Write:
+        raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
+    await evt.stop(id)
+
+@router.post("/restart/{id}")
+async def restart_evt(*, id: str, user: UserPermissionModel=Depends(get_user_permission_model)):
+    if not user.permission.Event.Write:
+        raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权操作', code=ErrorCode.REQUEST.PERMISSION_DENIED)
+    await evt.restart(id)
+
 @router.post("/{id}")
 async def get_event_info(*, id: str, token: str | None = Cookie(default=None)):
     if token:

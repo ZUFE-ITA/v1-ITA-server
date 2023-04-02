@@ -142,7 +142,7 @@ class EventCreateForm(BaseModel):
     organizer:      str
     addr:           str
     longtime:       bool
-    range:          TimeRangeModel | None = None
+    # range:          TimeRangeModel | None = None
     start:          datetime | None = None
     end:            datetime | None = None
     manual_stop:    bool

@@ -82,6 +82,48 @@ class Event:
         await cls.event.update_one({"_id": ObjectId(id)}, {"$set": form.dict(exclude_none=True)})
 
     @classmethod
+    async def if_stop(cls, id: str):
+        _id = ObjectId(id)
+        manual = await cls.event.find_one({"_id": _id}, {"manual_stop": 1, 'end': 1})
+        now = datetime.now()
+        manual_stop = manual.get('manual_stop', False)
+        end = manual.get("end", None)
+        if end:
+            if now > end:
+                return True
+        return False
+            
+    @classmethod
+    async def stop(cls, id: str):
+        _id = ObjectId(id)
+        # 检查是不是手动的
+        manual = await cls.event.find_one({"_id": _id}, {"manual_stop": 1, 'end': 1})
+        if not manual.get('manual_stop', False):
+            raise ServiceException(status.HTTP_400_BAD_REQUEST, detail='非手动', code=ErrorCode.EVENT.IS_NOT_MANUAL_STOP)
+        if manual.get("end", None) is not None:
+            raise ServiceException(status.HTTP_400_BAD_REQUEST, detail='已停', code=ErrorCode.EVENT.HAS_STOPPED)
+        return await cls.event.update_one({"_id": _id}, {
+            "$set": {
+                'end': datetime.now()
+            }
+        })
+    
+    @classmethod
+    async def restart(cls, id: str):
+        _id = ObjectId(id)
+        # 检查是不是手动的
+        manual = await cls.event.find_one({"_id": _id}, {"manual_stop": 1, 'end': 1})
+        if not manual.get('manual_stop', False):
+            raise ServiceException(status.HTTP_400_BAD_REQUEST, detail='非手动', code=ErrorCode.EVENT.IS_NOT_MANUAL_STOP)
+        if manual.get("end", None) is None:
+            raise ServiceException(status.HTTP_400_BAD_REQUEST, detail='没停止', code=ErrorCode.EVENT.NOT_STOP)
+        return await cls.event.update_one({"_id": _id}, {
+            "$unset": {
+                'end': 1
+            }
+        })
+
+    @classmethod
     async def get_joined_list(cls, uid: str, dtype=str):
         _uid = ObjectId(uid)
         user_hist = await cls.history.find({"uid": _uid}, {"eid": 1})
