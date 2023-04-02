@@ -35,7 +35,7 @@ class Event:
     @classmethod
     async def list(cls, uid: str = None):
         if uid is None:
-            return await cls.event.find({})
+            return cls.event.find({})
         _uid = ObjectId(uid)
         return cls.event.aggregate([
             {
