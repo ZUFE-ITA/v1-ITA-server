@@ -16,20 +16,8 @@ from pymongo import UpdateOne
     }[]
 }
 """
-"""db.competition_passed_challenge
-{
-    _id: ObjectId,
-    uid: ObjectId,
-    comp_id: ObjectId
-    cha_id: ObjectId
-    time: Datetime
-}
-"""
-
-
 class Competition:
     comp = db.competition
-    # passed = db.competition_passed_challenge # 用户通过的challenge!
 
     @classmethod
     async def get_personal_score(cls, comp_id: str, uid: str):
@@ -96,35 +84,7 @@ class Competition:
                 # "min_passed_time": {"$min": "$challenges.passed.time"},
                 "passed": {"$max": {"$cond": [{"$eq": ["$challenges.passed.id", _uid]}, True, False]}}
             }},
-            # {
-            #     "$project": {
-            #         "id": {"$toString": '$challenge.id'},
-            #         "passed": {"$in": [_uid, "$challenge.passed.id"]}
-            #     }
-            # }
         ])
-
-    # @classmethod
-    # async def get_passed_list(cls, comp_id: str, cha_id: str):
-    #     """ 得到题目的通过者列表"""
-    #     _coid = ObjectId(comp_id)
-    #     _chid = ObjectId(cha_id)
-    #     async for passed in cls.comp.aggregate([
-    #         {"$limit": 1},
-    #         {"$match": {"_id": _coid}},
-    #         {"$unwind": "$challenges", },
-    #         {
-    #             "$project": {
-    #                 "id": "$challenges.id",
-    #                 "passed": {"$ifNull": ["$challenges.passed", []]}
-    #             }
-    #         },
-    #         {"$match": {"id": _chid}}
-    #     ]):
-    #         passed = passed.get("passed", [])  # type: list[ObjectId]
-    #         return passed
-    #     raise ServiceException(status.HTTP_404_NOT_FOUND,
-    #                            detail='题目不存在', code=ErrorCode.CHALLENGE.NOT_FOUND)
 
     @classmethod
     async def assert_user_in_(cls, uid: str, comp_id: str):
@@ -177,13 +137,6 @@ class Competition:
                 }
             }
         })
-        # # 更新cls.passed
-        # await cls.passed.insert_one({
-        #     "uid": _uid,
-        #     "comp_id": _coid,
-        #     "cha_id": _chid,
-        #     "time": now,
-        # })
         if update.matched_count:
             return True
         raise ServiceException(status.HTTP_404_NOT_FOUND,
@@ -261,7 +214,8 @@ class Competition:
                 "$group": {
                     '_id': "$challenges.passed.id",
                     'count': {"$sum": 1},
-                    "score": {"$sum": "$challenges.score"}
+                    "score": {"$sum": "$challenges.score"},
+                    'avg_time': { '$avg': {'$toLong': "$challenges.passed.time" } },
                 }
             }
         ])

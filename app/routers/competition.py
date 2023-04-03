@@ -81,7 +81,7 @@ async def check_flag(*, cfi: CheckFlagIn, uid: str = Depends(get_uid_from_token)
 class RankData(BaseModel):
     uid:      str
     count:    int
-    # avg_time: int
+    avg_time: int
     score:    float|None
 
 @router.get("/rank/{comp_id}")
