@@ -24,9 +24,17 @@ async def remove_challenges(*, form: ChangeChallengeForm, user: UserPermissionMo
     need_ids = set([i.id for i in form.scores])
     remove = exist_ids.difference(need_ids)
     append = need_ids.difference(exist_ids)
-    await Competition.append_challenge(form.comp_id, *[s for s in form.scores if s.id in append])
-    await Competition.remove_challenge(form.comp_id, *remove)
+    ops = []
+    if len(append):
+        ops.append(await Competition.bulk_write_append_challenge(form.comp_id, *[s for s in form.scores if s.id in append]))
+    if len(remove):
+        ops.append(await Competition.bulk_write_remove_challenge(form.comp_id, *remove))
 
+    await Competition.bulk_write([
+        *ops,
+        *await Competition.bulk_write_update_score(form)
+    ])
+    
 # @router.post("/append_challenges")
 # async def append_challenge(*, form: ChangeChallengeForm, user: UserPermissionModel = Depends(get_user_permission_model)):
 #     if not user.permission.Event.Write:
@@ -73,13 +81,14 @@ async def check_flag(*, cfi: CheckFlagIn, uid: str = Depends(get_uid_from_token)
 class RankData(BaseModel):
     uid:      str
     count:    int
-    avg_time: int
+    # avg_time: int
     score:    float|None
 
 @router.get("/rank/{comp_id}")
 async def get_rank_of_competition(*, comp_id: str):
     return [
-        RankData(**cell, score=await Competition.get_personal_score(comp_id, cell['uid'])) 
+        # RankData(**cell, score=await Competition.get_personal_score(comp_id, cell['uid'])) 
+        RankData(**cell, uid=str(cell['_id']))
         async for cell in await Competition.get_rank(comp_id)
     ]
 
@@ -91,4 +100,5 @@ async def get_cha_status(*, comp_id: str, uid: str = Depends(get_uid_from_token)
 @router.post("/{cid}/{id}")
 async def get_challenge(*, cid: str, id: str, uid: str = Depends(get_uid_from_token)):
     rec = await Competition.get_challenge(cid, id)
-    return ChallengeInfoOmitFlag(**rec, id=str(rec['_id']), creator=str(rec['uid']))
+    score = await Competition.get_score(cid, id)
+    return ChallengeInfoOmitFlag(**rec, id=str(rec['_id']), creator=str(rec['uid']), score=score)
