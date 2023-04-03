@@ -1,22 +1,16 @@
-# IDIM - Server
+# ITA@ZUFE - Server
+
+[客户端](https://github.com/miaobuao/idim-client)
 
 ## 开发环境
 
-| Software    | Version |
-| ----------- | ------- |
-| Python      | 3.10.4  |
-| pymongo     | 4.2.0   |
-| fastapi     | 0.79.1  |
-| python-jose | 3.3.0   |
-| uvicorn     | 0.17.6  |
+| Software     | Version |
+| ------------ | ------- |
+| Python       | >= 3.10 |
+| Mongo Server | >= 5.x  |
+| redis        | 5.0.7   |
 
 ## 开发说明
 
 `_` + `ID类型` 表示该值为`ObjectID`类型
 
-## Run
-
-```sh
-cd ..
-uvicorn idim-server.main:app
-```
