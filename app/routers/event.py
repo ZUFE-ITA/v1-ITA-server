@@ -20,9 +20,11 @@ async def event_create(*, user:UserPermissionModel = Depends(get_user_permission
 
 @router.post("/list")
 async def event_list(token: str | None = Cookie(default=None)):
-    if token:
-        uid = await get_id_from_token(token)
-        return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) async for cell in await evt.list(uid)]
+    try:
+        if token:
+            uid = await get_id_from_token(token)
+            return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) async for cell in await evt.list(uid)]
+    except: pass
     return [EventInfo(**cell, id=str(cell['_id']), creator=str(cell['uid'])) async for cell in await evt.list()]
 
 @router.post("/join")

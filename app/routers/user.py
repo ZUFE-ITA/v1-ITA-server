@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, Cookie
 from pydantic import BaseModel
+from jose.exceptions import ExpiredSignatureError
 
-from ..dependencies import UserInfo, UserInfoWithPermission
+from ..dependencies import UserInfo, UserInfoWithPermission, get_user_info_by_token
 from .. import dependencies
 from ..database import  User, verify_reset_psw_code
 from ..utils.token_utils import generate_user_token, set_cookie
@@ -45,8 +46,11 @@ async def login(
     return user
 
 @router.post("/auth")
-async def auth(user: UserInfoWithPermission = Depends(dependencies.get_user_info_by_token)):
-    return user
+async def auth(*, token: str | None = Cookie(default=None), response: Response):
+    try:
+        return await get_user_info_by_token(token)
+    except ExpiredSignatureError:
+        set_cookie(response, "token", "", max_age=0)
 
 @router.post("/register")
 async def register(resp: Response, register_result: UserInfoWithPermission = Depends(dependencies.register)):
