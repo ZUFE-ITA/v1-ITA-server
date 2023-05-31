@@ -51,6 +51,12 @@ async def remove_challenges(*, form: ChangeChallengeForm, user: UserPermissionMo
 async def get_challenge_list(*, cid: str, user: UserPermissionModel = Depends(get_user_permission_model)):
     # 是否存在比赛
     if comp := await Event.get(cid, user.id):
+        # 比赛是否开始
+        start_time = comp.get("start", None)
+        if start_time is None:
+            raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权限', code=ErrorCode.REQUEST.PERMISSION_DENIED)
+        if start_time > datetime.datetime.now() and not (user.permission.Challenge.Read or user.permission.Challenge.Write):
+            raise ServiceException(status.HTTP_403_FORBIDDEN, detail='无权限', code=ErrorCode.REQUEST.PERMISSION_DENIED)
         # 是否参加/有权限
         if comp.get('joined', False) or user.permission.Challenge.Read or user.permission.Challenge.Write:
             if clist := await Competition.get_challenges_list(cid):

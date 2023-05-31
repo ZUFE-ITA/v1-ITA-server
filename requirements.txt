@@ -7,3 +7,4 @@ python-jose[cryptography]
 pymongo==4.3.3
 motor==3.1.1
 redis
+motor
