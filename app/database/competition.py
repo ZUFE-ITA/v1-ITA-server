@@ -24,7 +24,6 @@ class Competition:
         _uid = ObjectId(uid)
         _coid = ObjectId(comp_id)
         res = cls.comp.aggregate([
-            # {"$limit": 1},
             {"$match": {"_id": _coid}},
             {"$unwind": "$challenges"},
             {"$unwind": "$challenges.passed"},
@@ -75,9 +74,9 @@ class Competition:
         _coid = ObjectId(comp_id)
         await cls.assert_user_in_(_uid, _coid)
         return cls.comp.aggregate([
-            {"$limit": 1},
             {"$match": {"_id": _coid}},
-            {"$project": {"challenge": {"$ifNull": ["$challenges", []]}}},
+            {"$project": {"challenges": {"$ifNull": ["$challenges", []]}}},
+            {"$unwind": "$challenges"},
             {"$unwind": "$challenges.passed"},
             {"$group": {
                 "_id": {"challenge_id": "$challenges.id", "user_id": "$challenges.passed.id"},
@@ -109,7 +108,6 @@ class Competition:
         await cls.assert_user_in_(uid, _coid)
         # 检查有没有提交过
         rec = cls.comp.aggregate([
-            {'$limit': 1},
             {"$match": {"_id": _coid}},
             {"$unwind": "$challenges"},
             {"$match": {"challenges.id": _chid}},
