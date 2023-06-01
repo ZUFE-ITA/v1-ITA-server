@@ -101,7 +101,7 @@ async def get_rank_of_competition(*, comp_id: str):
 @router.post("/challenge_status/{comp_id}")
 async def get_cha_status(*, comp_id: str, uid: str = Depends(get_uid_from_token)):
     clgs = await Competition.get_personal_challenges_status(uid, comp_id)
-    return {str(v['_id']['challenge_id']): v['passed'] async for v in clgs}
+    return {str(v['_id']): True async for v in clgs}
 
 @router.post("/{cid}/{id}")
 async def get_challenge(*, cid: str, id: str, uid: str = Depends(get_uid_from_token)):

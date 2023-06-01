@@ -78,10 +78,12 @@ class Competition:
             {"$project": {"challenges": {"$ifNull": ["$challenges", []]}}},
             {"$unwind": "$challenges"},
             {"$unwind": "$challenges.passed"},
+            {"$match": {"challenges.passed.id": _uid}},
             {"$group": {
-                "_id": {"challenge_id": "$challenges.id", "user_id": "$challenges.passed.id"},
+                "_id": "$challenges.id",
+                # "_id": {"challenge_id": "$challenges.id", "user_id": "$challenges.passed.id"},
                 # "min_passed_time": {"$min": "$challenges.passed.time"},
-                "passed": {"$max": {"$cond": [{"$eq": ["$challenges.passed.id", _uid]}, True, False]}}
+                # "passed": {"$max": {"$cond": [{"$eq": ["$challenges.passed.id", _uid]}, True, False]}}
             }},
         ])
 
