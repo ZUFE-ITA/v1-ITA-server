@@ -206,7 +206,6 @@ class Competition:
         _coid = ObjectId(comp_id)
         await cls.assert_exists(_coid)
         return cls.comp.aggregate([
-            {"$limit": 1},
             {"$match": {"_id": _coid}},
             {"$unwind": "$challenges"},
             {"$unwind": "$challenges.passed"},
