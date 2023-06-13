@@ -70,7 +70,7 @@ if __name__ == '__main__':
         if comp is None:
             print("比赛不存在(ID有误?)")
             exit()
-        for rec in sorted(sorted((cols.competition.aggregate([
+        for rec in sorted((cols.competition.aggregate([
             {"$match": {"_id": ObjectId(args.id)}},
             {"$unwind": "$challenges"},
             {"$unwind": "$challenges.passed"},
@@ -82,7 +82,7 @@ if __name__ == '__main__':
                     'avg_time': { '$avg': {'$toLong': "$challenges.passed.time" } },
                 }
             }
-        ])), key=lambda x:x['score'], reverse=True), key=lambda x: x['avg_time'], reverse=True):
+            ])), key=lambda x:(x['score'], -x['avg_time']), reverse=True)[:args.count if args.count is not None else -1]:
             user = cols.user_info.find_one({"_id": rec['_id']}, {
                 "no": 1,
                 'username': 1,
