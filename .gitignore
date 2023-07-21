@@ -27,3 +27,4 @@ coverage
 
 run-in-server.*
 output/**
+.cert/**
