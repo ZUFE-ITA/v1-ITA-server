@@ -2,3 +2,4 @@ data
 dump
 .DS_Store
 node_modules
+dev.db*

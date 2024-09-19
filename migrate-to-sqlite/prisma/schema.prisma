@@ -11,17 +11,112 @@ datasource db {
 }
 
 model User {
-  id         Int            @id @default(autoincrement())
-  no         Int            @unique
+  id         Int      @id @default(autoincrement())
+  no         String?  @unique
   username   String
-  email      String         @unique
+  email      String   @unique
   password   String
-  permission UserPermission @relation(fields: [id], references: [userId], onDelete: Cascade)
-  createdAt  DateTime       @default(now()) @map("created_at")
-  updatedAt  DateTime       @updatedAt @map("updated_at")
+  // 权限格式：Priority;Event;Challenge;Blog
+  // Priority: [0-9]
+  // Event: Read(1), Write(2), DeleteSelf(4), DeleteOthers(8), Join(16)
+  // Challenge: Read(1), Write(2), DeleteSelf(4), DeleteOthers(8)
+  // Blog: Read(1), Write(2), DeleteSelf(4), DeleteOthers(8)
+  permission String   @default("9;17;0;1")
+  ctime      DateTime @default(now()) @map("created_at")
+  mtime      DateTime @updatedAt @map("modified_at")
+
+  scoreboard        CompetitionScoreboard[]
+  enrolledEvents    EventRoll[]             @relation("EnrolledEvents")
+  createdChallenges ChallengeTemplate[]
+  createdEvents     Event[]
 }
 
-model UserPermission {
-  userId Int @id @map("user_id")
-  user User?
+model Event {
+  id            Int      @id @default(autoincrement())
+  creatorId     Int      @map("creator_id")
+  creator       User     @relation(fields: [creatorId], references: [id])
+  title         String
+  detail        String
+  organizer     String
+  startTime     DateTime @map("start_time")
+  endTime       DateTime @map("end_time")
+  isCompetition Boolean  @map("is_competition")
+  ctime         DateTime @default(now()) @map("created_at")
+  mtime         DateTime @updatedAt @map("modified_at")
+
+  shadowCompetition ShadowCompetition?
+  roll              EventRoll[]
+}
+
+// 报名
+model EventRoll {
+  user   User @relation("EnrolledEvents", fields: [userId], references: [id], onDelete: Cascade)
+  userId Int  @map("user_id")
+
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId Int   @map("event_id")
+
+  ctime DateTime @default(now()) @map("created_at")
+
+  @@id([userId, eventId])
+}
+
+model ShadowCompetition {
+  eventId    Int                            @id
+  event      Event                          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  challenges CompetitionChallengeInstance[]
+  scoreboard CompetitionScoreboard[]
+
+  ctime DateTime @default(now()) @map("created_at")
+  mtime DateTime @updatedAt @map("modified_at")
+}
+
+model ChallengeTemplate {
+  id          Int      @id @default(autoincrement())
+  creatorId   Int      @map("creator_id")
+  creator     User     @relation(fields: [creatorId], references: [id])
+  title       String
+  description String
+  flag        String
+  label       String
+  ctime       DateTime @default(now()) @map("created_at")
+  mtime       DateTime @updatedAt @map("modified_at")
+
+  instances CompetitionChallengeInstance[]
+}
+
+model CompetitionChallengeInstance {
+  id Int @id @default(autoincrement())
+
+  competitionId Int @map("competition_id")
+  competition   ShadowCompetition @relation(fields: [competitionId], references: [eventId], onDelete: Cascade)
+
+  templateId Int               @map("template_id")
+  template   ChallengeTemplate @relation(fields: [templateId], references: [id])
+
+  // override
+  title       String
+  description String
+  flag        String
+  score       Int
+
+  scoreboard CompetitionScoreboard[]
+
+  ctime DateTime @default(now()) @map("created_at")
+  mtime DateTime @updatedAt @map("modified_at")
+}
+
+model CompetitionScoreboard {
+  competitionId Int               @map("competition_id")
+  competition   ShadowCompetition @relation(fields: [competitionId], references: [eventId], onDelete: Cascade)
+
+  challengeId Int                          @map("challenge_id")
+  challenge   CompetitionChallengeInstance @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ctime DateTime @default(now()) @map("created_at")
+
+  @@id([competitionId, challengeId, userId])
 }
