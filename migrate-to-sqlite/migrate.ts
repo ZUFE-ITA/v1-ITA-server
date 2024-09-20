@@ -74,6 +74,7 @@ for(const e of EventData) {
             startTime: new Date(e.start),
             endTime: new Date(e.end),
             isCompetition: e.is_competition,
+            isDraft: false, 
             roll: {
                 createMany: {
                     data: e.roll.map(d=>({

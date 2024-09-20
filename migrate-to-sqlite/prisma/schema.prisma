@@ -41,6 +41,7 @@ model Event {
   startTime     DateTime @map("start_time")
   endTime       DateTime @map("end_time")
   isCompetition Boolean  @map("is_competition")
+  isDraft       Boolean  @map("is_draft")
   ctime         DateTime @default(now()) @map("created_at")
   mtime         DateTime @updatedAt @map("modified_at")
 
